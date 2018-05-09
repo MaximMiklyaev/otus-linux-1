@@ -1,0 +1,97 @@
+vagrant up # запускаем и провиженим VM
+vagrant halt # выключаем VM
+
+# Используя  VirtualBox добавляем загрузку с установочного DVD CentOS
+# Можно было бы и в vagrantfile описать, но ленно :)
+
+# Стартуем VM в VirtualBox -> Troubleshooting -> Rescue a CentOS system -> Skip to shell
+# Работаем с shell из rescure mode:
+
+# Создаем партицию на sdb
+parted:
+  select /dev/sdb
+  mklabel msdos
+  mkpart -> primary -> ext4 -> 1 -> -1
+  quit
+
+mkfs.ext4 /dev/sdb1  # Форматируем sdb1
+
+mkdir /backup  # для бекапа root
+mkdir /mnt/root  # для монтирования root
+mkdir /mnt/home  # для монтирования home
+mkdir /mnt/var # для монтирования var
+
+mount /dev/sdb1 /backup  # монтируем диск для бекапа root
+mount /dev/VolGroup/LogVol00 /mnt/root  # монтируем существующий root
+
+xfsdump -f /backup/root.dmp /mnt/root  # снимаем дамп root
+
+umount /mnt/root  # размонтируем root
+
+vgchange -ay  # активируем все VG
+lvremove /dev/VolGroup00/LogVol00  # удалим более ненужный LV
+lvcreate -L 8G -n LogVol00 VolGroup00  # создадим новый LV с таким же именем
+vgchange -ay  # снова активируем VG
+mkfs.xfs -L root /dev/VolGroup00/LogVol00  # форматируем LV в xfs
+mount /dev/VolGroup00/LogVol00 /mnt/root  # монтируем новый LV для root
+xfsrestore -f /backup/root.dmp /mnt/root  # восстанавливаем LV из бекапа
+umount /backup  # размонтируем бекап
+
+# Удаляем партицию на sdb
+parted:
+  select /dev/sdb
+  rm 1
+  quit
+
+vgextend VolGroup00 /dev/sdb  # добавляем в VG еще один диск
+lvcreate -L 4G -m1 -n var VolGroup00  # создаем LV в mirror для var
+vgchange -ay  # снова активируем VG
+mkfs.xfs /dev/VolGroup00/var  # форматируем LV в xfs
+mount /dev/VolGroup00/var /mnt/var  # монтируем новый LV для var
+cp -ax /mnt/root/var/* /mnt/var/  # копируем var в новый LV
+mv /mnt/root/var /mnt/root/old.var  # оставляем на всякий случай старый var
+
+lvcreate -L 4G -n home VolGroup00  # создаем LV для home
+vgchange -ay  # снова активируем VG
+mkfs.ext4 /dev/VolGroup00/home  # форматируем LV в ext4
+mount /dev/VolGroup00/home /mnt/home  # монтируем новый LV для home
+cp -ra /mnt/root/home/* /mnt/home/  # копируем home в новый LV
+
+vi /mnt/root/etc/fstab  # добавляем в fstab var и home монтирование
+
+fstab:
+  /dev/mapper/VolGroup00-var xfs defaults 0 0
+  /dev/mapper/VolGroup00-home ext4 defaults 0 0
+
+reboot  # перезагрузимся и выйдем из rescure mode
+
+vagrant up
+vagrant ssh
+
+cd /home/vagrant
+dd if=/dev/zero of=test.data bs=250M count=1  # создадим тестовый файл в /home/vagrant
+lvcreate -L 4G -s -n home_snap /dev/VolGroup00/home  # создаем LV snapshot для home
+rm test.data  # удалим тестовый файл
+cd / && umount /home  # уйдем из /home и размонтируем его
+lvconvert --merge /dev/VolGroup00/home_snap  # восстановим LV из снэпшота
+mount /home  # вернем /home на место
+ls /home/vagrant -> test.data  # убедимся, что снэпшот восстановился и тестовый файл на месте
+
+
+sudo yum install http://download.zfsonlinux.org/epel/zfs-release.el7_4.noarch.rpm  # добавим ремозиторий ZFS
+vi /etc/yum.repos.d/zfs.repo  # подправим репозиторий для установки ZFS для kABI
+sudo yum install zfs  # установим zfs
+reboot  # перезагрузимся
+
+vagrant ssh
+modprobe zfs  # загрузим модуль zfs
+zpool create opt /dev/sdc /dev/sdd cache /dev/sde # создадим пул из двуx дисков и одного кеша для opt
+zfs create opt/snapshot -o mountpoint=/opt/snapshot # создадим каталог для теста снэпшота
+chown -Rfv vagrant:vagrant /opt/snapshot  # наделим vagrant нужными правами
+echo opt_test > /opt/snapshot/testfile  # сделаем пробную запись
+zfs snapshot opt/snapshot@test  # сделаем тестовый снэпшот
+rm /opt/snapshot/testfile  # удалим тестовый файл
+sudo zfs rollback opt/snapshot@test  # восстановим данные из снэпшота
+ls /opt/snapshot/ -> testfile  # видно что тестовый файл вернулся
+zfs destroy opt/snapshot@test  # удалим снэпшот
+zpool destroy -f opt  # удалим zfs пул
