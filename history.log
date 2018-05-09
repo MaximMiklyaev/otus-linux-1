@@ -78,7 +78,7 @@ mount /home  # вернем /home на место
 ls /home/vagrant -> test.data  # убедимся, что снэпшот восстановился и тестовый файл на месте
 
 
-sudo yum install http://download.zfsonlinux.org/epel/zfs-release.el7_4.noarch.rpm  # добавим ремозиторий ZFS
+sudo yum install http://download.zfsonlinux.org/epel/zfs-release.el7_4.noarch.rpm  # добавим репозиторий ZFS
 vi /etc/yum.repos.d/zfs.repo  # подправим репозиторий для установки ZFS для kABI
 sudo yum install zfs  # установим zfs
 reboot  # перезагрузимся
