@@ -1,2 +1,2 @@
 *.vmdk
-.vagrant
+.vagrant/
