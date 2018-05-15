@@ -54,7 +54,7 @@ Vagrant.configure("2") do |config|
           chmod 777 /mnt/raid5
 SCRIPT
 
-          #config.vm.provision "shell", inline: $raid
+          config.vm.provision "shell", inline: $raid
 
       end
   end
