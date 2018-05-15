@@ -12,6 +12,8 @@
 * в строке `linux16 ...` добавляем `systemd.unit=rescue.target`
 * в строке `linux16 ...` добавляем `systemd.unit=emergency.target`
 
+
+
 ### Установить систему с LVM, после чего переименовать VG
 
 Устанавливаем CentOS в VM, в разделе настройки диска выбираем установку на LVM.
@@ -33,6 +35,7 @@
 Перезагружаем VM, запускаем систему штатно. Загрузка успешна с новым именем VG.
 
 
+
 ### Добавить модуль в initrd
 
 `mkdir /usr/lib/dracut/modules.d/01test` - создаем каталог для тестового модуля
@@ -52,4 +55,34 @@
 `/usr/lib/dracut/skipcpio /boot/initramfs-$(uname -r).img | zcat | cpio -ivd`
 
 
+### Сконфигурировать систему без отдельного раздела с /boot, а только с LVM
 
+Добавим еще один VDI-диск для нашей VM. Подготовим его предварительно (отформатируем)
+
+`pvcreate /dev/sdb1/ --bootloaderareasize 1M` - на новом диске создадим PV
+
+`vgextend rootvg /dev/sdb1` - добавим в нашу VG новый PV
+
+`pvmove /dev/sda2 /dev/sdv1` - перенесем данные на новый диск
+
+`vgreduce rootvg /dev/sda2` -  избавимся от старого PV в нашей VG
+
+`lvcreate -L 1G -n boot rootvg` - создадим новый LV для boot
+
+`mkfs.xfs /dev/rootvg/boot` - отформатируем
+
+Перезагружаем VM и с установочного диска стартуем rescue режим, где через `xfsdump` и `xfsrestore` переносим наш существующий `/boot` на созданный LV (детально команды описывать не стал, они были в прошлом домашнем задании).
+
+Перезагружаем VM, запускаем систему штатно.
+
+Правим `/etc/fstab`, где в строке монтирования `/boot` указываем вместо `UUID`, наш LV - `/dev/mapper/rootvg-boot`.
+
+`yum-config-manager --add-repo=https://yum.rumyantsev.com/centos/7/x86_64/` - добавляем репозиторий с пропатченным под LVM Grub
+
+`yum install grub2 -y --nogpgcheck` - устанавливаем grub
+
+`grub2-install /dev/sdb1` - не уверен, что необходимо после установки Grub, но сделал на всякий случай
+
+Выключаем  VM. Убираем из конфигурации первый диск, PORT 0 на контроллере назначаем для нашего /dev/sdb диска, добавленного ранее, который станет /dev/sda.
+
+Включаем VM. Загрузка с LVM прошла успешно.
