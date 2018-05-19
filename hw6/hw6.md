@@ -42,4 +42,37 @@ Unit=searchlog.service
 [Install]
 WantedBy=timers.target
 ```
+
+Для установки и запуска перенесем ```searchlog.service``` и ```searchlog.timer``` в ```/etc/systemd/system/```.
+
+```systemctl daemon-reload``` - что бы systemd увидел новые юниты
+```systemctl enable searchlog.service``` - установим наш сервис
+```systemctl enable searchlog.timer``` - установим таймер для сервиса
+```systemctl start searchlog.timer``` - запустим таймар
+
+```systemctl list-timers --all``` - убедимся что наш таймер в списке:
+```
+NEXT                         LEFT     LAST                         PASSED    UNIT                         ACTIVATES
+Sat 2018-05-19 17:23:15 EDT  26s ago  Sat 2018-05-19 17:23:41 EDT  7ms ago   searchlog.timer              searchlog.service
+```
+```systemctl status searchlog -l``` - проверим как работает наш сервис
+```
+● searchlog.service - Parsing Nginx log
+   Loaded: loaded (/etc/systemd/system/searchlog.service; disabled; vendor preset: disabled)
+   Active: inactive (dead) since Sat 2018-05-19 17:26:19 EDT; 2s ago
+  Process: 10874 ExecStart=/bin/bash searchlog.sh start (code=exited, status=0/SUCCESS)
+ Main PID: 10874 (code=exited, status=0/SUCCESS)
+
+May 19 17:26:19 localhost.localdomain bash[10874]: "Mozilla/5.0 Firefox/58.0"
+May 19 17:26:19 localhost.localdomain bash[10874]: "Mozilla/5.0 Firefox/58.0"
+May 19 17:26:19 localhost.localdomain bash[10874]: "Mozilla/5.0 Firefox/58.0"
+May 19 17:26:19 localhost.localdomain bash[10874]: "Mozilla/5.0 Firefox/58.0"
+May 19 17:26:19 localhost.localdomain bash[10874]: "Mozilla/5.0 Firefox/58.0"
+May 19 17:26:19 localhost.localdomain bash[10874]: "Mozilla/5.0 Firefox/58.0"
+May 19 17:26:19 localhost.localdomain bash[10874]: "Mozilla/5.0 Firefox/58.0"
+May 19 17:26:19 localhost.localdomain bash[10874]: "Mozilla/5.0 Firefox/58.0"
+May 19 17:26:19 localhost.localdomain bash[10874]: "Mozilla/5.0 Firefox/58.0"
+May 19 17:26:19 localhost.localdomain bash[10874]: "Mozilla/5.0 Firefox/58.0"
+
+```
 -------------
