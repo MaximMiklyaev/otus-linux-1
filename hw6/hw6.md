@@ -81,7 +81,9 @@ May 19 17:26:19 localhost.localdomain bash[10874]: "Mozilla/5.0 Firefox/58.0"
 -------------
 ### Из epel установить spawn-fcgi и переписать init-скрипт на unit-файл. Имя сервиса должно так же называться.
 
-```yum install epel-release -y && yum install spawn-fcgi -y && yum install httpd -y && yum install php php-cli mod_fcgid -y``` - самая сложная часть задания, которая тянет явно на * :) пару часов пришлось потратить, что бы понять, что собвстенно нужно этому ```spawn-fcgi``` что бы нормально запуститься.
+```yum install epel-release -y && yum install spawn-fcgi -y && yum install httpd -y && yum install php php-cli mod_fcgid -y``` - самая сложная часть задания, которая тянет явно на * :) 
+
+пару часов пришлось потратить, что бы понять, что собвстенно нужно этому ```spawn-fcgi``` что бы нормально запуститься.
 
 Unit-файл достаточно простой, мне его хватило:
 ```
@@ -99,5 +101,6 @@ KillMode=process
 WantedBy=multi-user.target
 ```
 Также в конфиге ```/etc/sysconfig/spawn-fcgi``` нужно раскоментировать строки, без опций сервис не запустится.
+
 -------------
 
