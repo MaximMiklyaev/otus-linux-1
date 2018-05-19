@@ -46,9 +46,12 @@ WantedBy=timers.target
 Для установки и запуска перенесем ```searchlog.service``` и ```searchlog.timer``` в ```/etc/systemd/system/```.
 
 ```systemctl daemon-reload``` - что бы systemd увидел новые юниты
+
 ```systemctl enable searchlog.service``` - установим наш сервис
+
 ```systemctl enable searchlog.timer``` - установим таймер для сервиса
-```systemctl start searchlog.timer``` - запустим таймар
+
+```systemctl start searchlog.timer``` - запустим таймер
 
 ```systemctl list-timers --all``` - убедимся что наш таймер в списке:
 ```
