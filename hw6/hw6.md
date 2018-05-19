@@ -58,7 +58,7 @@ WantedBy=timers.target
 NEXT                         LEFT     LAST                         PASSED    UNIT                         ACTIVATES
 Sat 2018-05-19 17:23:15 EDT  26s ago  Sat 2018-05-19 17:23:41 EDT  7ms ago   searchlog.timer              searchlog.service
 ```
-```systemctl status searchlog -l``` - проверим как работает наш сервис
+```systemctl status searchlog -l``` - проверим как работает наш сервис:
 ```
 ● searchlog.service - Parsing Nginx log
    Loaded: loaded (/etc/systemd/system/searchlog.service; disabled; vendor preset: disabled)
@@ -79,3 +79,25 @@ May 19 17:26:19 localhost.localdomain bash[10874]: "Mozilla/5.0 Firefox/58.0"
 
 ```
 -------------
+### Из epel установить spawn-fcgi и переписать init-скрипт на unit-файл. Имя сервиса должно так же называться.
+
+```yum install epel-release -y && yum install spawn-fcgi -y && yum install httpd -y && yum install php php-cli mod_fcgid -y``` - самая сложная часть задания, которая тянет явно на * :) пару часов пришлось потратить, что бы понять, что собвстенно нужно этому ```spawn-fcgi``` что бы нормально запуститься.
+
+Unit-файл достаточно простой, мне его хватило:
+```
+[Unit]
+Description=Spawn FastCGI scripts to be used by web servers
+After=network.target
+
+[Service]
+Type=forking
+EnvironmentFile=/etc/sysconfig/spawn-fcgi
+ExecStart=/usr/bin/spawn-fcgi $OPTIONS
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target
+```
+Также в конфиге ```/etc/sysconfig/spawn-fcgi``` нужно раскоментировать строки, без опций сервис не запустится.
+-------------
+
