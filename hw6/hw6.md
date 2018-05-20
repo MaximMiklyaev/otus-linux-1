@@ -112,7 +112,9 @@ WantedBy=multi-user.target
 ExecStart=/usr/sbin/httpd -f %i.conf -DFOREGROUND
 ```
 И создал этот конфиг в ```/etc/httpd/instance1.conf```, который является копией оригинального httpd конфига, в котором изменен ```PidFile``` и Listen порт.
+
 ```systemctl start httpd@instance1.service``` - запускаем еще один инстанс httpd
+
 ```systemctl status httpd@instance1.service``` - получаем статус:
 ```
 ● httpd@instance1.service - The Apache HTTP Server
