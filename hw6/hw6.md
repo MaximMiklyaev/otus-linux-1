@@ -111,7 +111,7 @@ WantedBy=multi-user.target
 ```
 ExecStart=/usr/sbin/httpd -f %i.conf -DFOREGROUND
 ```
-И создал этот конфиг в ```/etc/httpd/instance1.conf```, который является копией оригинального httpd конфига, в котором изменен ```PidFile``` и Listen порт.
+И создал этот конфиг в ```/etc/httpd/instance1.conf```, который является копией оригинального httpd конфига, в котором изменен ```PidFile``` и ```Listen``` порт.
 
 ```systemctl start httpd@instance1.service``` - запускаем еще один инстанс httpd
 
@@ -140,8 +140,10 @@ May 19 20:03:54 localhost.localdomain systemd[1]: Started The Apache HTTP Server
 -------------
 ### Скачать демо-версию Atlassian Jira и переписать основной скрипт запуска на unit-файл
 
-Так как в задании не указывается, что значит основной файл, то переписывал /etc/init.d/jira.
-Переписывал, конечно, громко сказано. Получилось вот так ```/etc/systemd/system/jira.service```:
+Так как в задании не указывается, что значит основной файл, то переписывал ```/etc/init.d/jira```.
+Переписывал, конечно, громко сказано. 
+
+Получилось вот так ```/etc/systemd/system/jira.service```:
 ```
 [Unit]
 Description=Jira
