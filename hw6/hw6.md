@@ -136,3 +136,42 @@ ExecStart=/usr/sbin/httpd -f %i.conf -DFOREGROUND
 May 19 20:03:54 localhost.localdomain systemd[1]: Starting The Apache HTTP Server...
 May 19 20:03:54 localhost.localdomain systemd[1]: Started The Apache HTTP Server.
 ```
+
+-------------
+### Скачать демо-версию Atlassian Jira и переписать основной скрипт запуска на unit-файл
+
+Так как в задании не указывается, что значит основной файл, то переписывал /etc/init.d/jira.
+Переписывал, конечно, громко сказано. Получилось вот так ```/etc/systemd/system/jira.service```:
+```
+[Unit]
+Description=Jira
+
+[Service]
+Type=forking
+User=jira
+ExecStart=/opt/atlassian/jira/bin/start-jira.sh
+ExecStop=/opt/atlassian/jira/bin/stop-jira.sh
+```
+```systemctl status jira.service -l``` - проверим как работает:
+```
+● jira.service - Jira
+   Loaded: loaded (/etc/systemd/system/jira.service; static; vendor preset: disabled)
+   Active: active (running) since Sat 2018-05-19 20:37:04 EDT; 52s ago
+  Process: 1713 ExecStart=/opt/atlassian/jira/bin/start-jira.sh (code=exited, status=0/SUCCESS)
+ Main PID: 1741 (java)
+   CGroup: /system.slice/jira.service
+           └─1741 /opt/atlassian/jira/jre//bin/java -Djava.util.logging.config.file=/opt/atlassian/jira/conf/logging.properties -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager -Xms384m -Xmx768m -Djava.awt.headless=true -Datlassian.standalone=JIRA -Dorg.apache.jasper.runtime.BodyContentImpl.LIMIT_BUFFER=true -Dmail.mime.decodeparameters=true -Dorg.dom4j.factory=com.atlassian.core.xml.InterningDocumentFactory -XX:-OmitStackTraceInFastThrow -Datlassian.plugins.startup.options= -Djdk.tls.ephemeralDHKeySize=2048 -Djava.protocol.handler.pkgs=org.apache.catalina.webresources -Xloggc:/opt/atlassian/jira/logs/atlassian-jira-gc-%t.log -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=20M -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -XX:+PrintGCCause -classpath /opt/atlassian/jira/bin/bootstrap.jar:/opt/atlassian/jira/bin/tomcat-juli.jar -Dcatalina.base=/opt/atlassian/jira -Dcatalina.home=/opt/atlassian/jira -Djava.io.tmpdir=/opt/atlassian/jira/temp org.apache.catalina.startup.Bootstrap start
+
+May 19 20:37:04 localhost.localdomain start-jira.sh[1713]: .:,.$MMMMMMM
+May 19 20:37:04 localhost.localdomain start-jira.sh[1713]: .IMMMM..NMMMMMD.
+May 19 20:37:04 localhost.localdomain start-jira.sh[1713]: .8MMMMM:  :NMMMMN.
+May 19 20:37:04 localhost.localdomain start-jira.sh[1713]: .MMMMMM.   .MMMMM~.
+May 19 20:37:04 localhost.localdomain start-jira.sh[1713]: .MMMMMN    .MMMMM?.
+May 19 20:37:04 localhost.localdomain start-jira.sh[1713]: Atlassian JIRA
+May 19 20:37:04 localhost.localdomain start-jira.sh[1713]: Version : 7.9.2
+May 19 20:37:04 localhost.localdomain start-jira.sh[1713]: If you encounter issues starting or stopping JIRA, please see the Troubleshooting guide at http://confluence.atlassian.com/display/JIRA/Installation+Troubleshooting+Guide
+May 19 20:37:04 localhost.localdomain start-jira.sh[1713]: Server startup logs are located in /opt/atlassian/jira/logs/catalina.out
+May 19 20:37:04 localhost.localdomain systemd[1]: Started Jira.
+```
+
+
