@@ -103,4 +103,34 @@ WantedBy=multi-user.target
 Также в конфиге ```/etc/sysconfig/spawn-fcgi``` нужно раскоментировать строки, без опций сервис не запустится.
 
 -------------
+### Дополнить юнит-файл apache httpd возможностьб запустить несколько инстансов сервера с разными конфигами
 
+```cp /usr/lib/systemd/system/httpd.service /usr/lib/systemd/system/httpd@instance1.service``` - создаем шаблон для инстанса httpd
+
+В unit-файле инстанса изменил лишь одну строку для загрузки httpd с другим конфигом:
+```
+ExecStart=/usr/sbin/httpd -f %i.conf -DFOREGROUND
+```
+И создал этот конфиг в ```/etc/httpd/instance1.conf```, который является копией оригинального httpd конфига, в котором изменен ```PidFile``` и Listen порт.
+```systemctl start httpd@instance1.service``` - запускаем еще один инстанс httpd
+```systemctl status httpd@instance1.service``` - получаем статус:
+```
+● httpd@instance1.service - The Apache HTTP Server
+   Loaded: loaded (/usr/lib/systemd/system/httpd@instance1.service; disabled; vendor preset: disabled)
+   Active: active (running) since Sat 2018-05-19 20:03:54 EDT; 8min ago
+     Docs: man:httpd(8)
+           man:apachectl(8)
+ Main PID: 2411 (httpd)
+   Status: "Total requests: 1; Current requests/sec: 0; Current traffic:   0 B/sec"
+   CGroup: /system.slice/system-httpd.slice/httpd@instance1.service
+           ├─2411 /usr/sbin/httpd -f instance1.conf -DFOREGROUND
+           ├─2412 /usr/sbin/httpd -f instance1.conf -DFOREGROUND
+           ├─2413 /usr/sbin/httpd -f instance1.conf -DFOREGROUND
+           ├─2414 /usr/sbin/httpd -f instance1.conf -DFOREGROUND
+           ├─2415 /usr/sbin/httpd -f instance1.conf -DFOREGROUND
+           ├─2416 /usr/sbin/httpd -f instance1.conf -DFOREGROUND
+           └─2417 /usr/sbin/httpd -f instance1.conf -DFOREGROUND
+
+May 19 20:03:54 localhost.localdomain systemd[1]: Starting The Apache HTTP Server...
+May 19 20:03:54 localhost.localdomain systemd[1]: Started The Apache HTTP Server.
+```
