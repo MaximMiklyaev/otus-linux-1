@@ -23,7 +23,7 @@ After=network.target
 [Service]
 EnvironmentFile=-/etc/sysconfig/searchlog
 WorkingDirectory=/home/user
-ExecStart=/bin/bash searchlog.sh start
+ExecStart=/bin/bash searchlog.sh
 Type=simple
 
 [Install]
