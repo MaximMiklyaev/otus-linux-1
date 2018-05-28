@@ -1,0 +1,4 @@
+[zolti]
+name=zolti
+baseurl=http://35.189.228.32
+gpgcheck=0
