@@ -10,8 +10,8 @@
 
 Для успешного выполнения всех пунктов, была создана карта сети:
 
-<a href="https://raw.githubusercontent.com/reddare/otus-linux/hw9/hw9/map-hw9.png" rel="Click!">![map](./map-hw9.png)</a>
+<a href="https://raw.githubusercontent.com/reddare/otus-linux/hw9/hw9/map-hw9.png" rel="Click!" target="_blank">![map](./map-hw9.png)</a>
 
-Результат выполнения в [Vagrantfile](./Vagrantfile)
+Результат выполнения в [Vagrantfile](./Vagrantfile).
 
-Все роутеры пришлось объеденить в одну физическую (virtualbox) сеть ```router-net```, в ином случае алиасы для eth1 не работали.
+Все роутеры пришлось объеденить в одну физическую (virtualbox) сеть ```router-net```, в ином случае алиасы для ```eth1``` на ```centralRouter``` не работали.
