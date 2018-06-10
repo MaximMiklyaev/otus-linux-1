@@ -34,7 +34,7 @@ MACHINES = {
                {ip: '192.168.2.1', adapter: 3, netmask: "255.255.255.192", virtualbox__intnet: "dev-office1-net"},
                {ip: '192.168.2.65', adapter: 4, netmask: "255.255.255.192", virtualbox__intnet: "testservers-office1-net"},
                {ip: '192.168.2.129', adapter: 5, netmask: "255.255.255.192", virtualbox__intnet: "managers-net"},
-               {ip: '192.168.2.192', adapter: 6, netmask: "255.255.255.192", virtualbox__intnet: "hardware-office1-net"}
+               {ip: '192.168.2.193', adapter: 6, netmask: "255.255.255.192", virtualbox__intnet: "hardware-office1-net"}
             ]
   },
 
@@ -51,7 +51,7 @@ MACHINES = {
               {ip: '192.168.253.2', adapter: 2, netmask: "255.255.255.252", virtualbox__intnet: "router-net"},
               {ip: '192.168.1.1', adapter: 3, netmask: "255.255.255.128", virtualbox__intnet: "dev-office2-net"},
               {ip: '192.168.1.129', adapter: 4, netmask: "255.255.255.192", virtualbox__intnet: "testservers-office2-net"},
-              {ip: '192.168.1.192', adapter: 5, netmask: "255.255.255.192", virtualbox__intnet: "hardware-office2-net"}
+              {ip: '192.168.1.193', adapter: 5, netmask: "255.255.255.192", virtualbox__intnet: "hardware-office2-net"}
             ]
   }, 
   
