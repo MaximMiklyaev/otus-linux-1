@@ -74,7 +74,7 @@ MACHINES = {
   :testClient2 => {
     :box_name => "centos/7",
     :net => [
-               {ip: '192.168.3.4', adapter: 2, netmask: "255.255.255.192", virtualbox__intnet: "test-net"},
+               {ip: '192.168.3.5', adapter: 2, netmask: "255.255.255.192", virtualbox__intnet: "test-net"},
                {adapter: 3, auto_config: false, virtualbox__intnet: "test-lan"}
             ]
   },
