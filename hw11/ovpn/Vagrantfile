@@ -1,0 +1,131 @@
+# -*- mode: ruby -*-
+# vim: set ft=ruby :
+
+MACHINES = {
+
+  :ovpn => {
+        :box_name => "centos/7",
+        :net => [
+                   {ip: '192.168.20.1', adapter: 3, netmask: "255.255.255.0", virtualbox__intnet: "ovpn"}
+                ]
+  }
+}
+
+Vagrant.configure("2") do |config|
+
+  MACHINES.each do |boxname, boxconfig|
+      
+    config.vm.define boxname do |box|
+
+        box.vm.box = boxconfig[:box_name]
+        box.vm.host_name = boxname.to_s
+
+        config.vm.provider "virtualbox" do |v|
+          v.memory = 256
+        end
+
+        boxconfig[:net].each do |ipconf|
+          box.vm.network "private_network", ipconf
+          box.vm.network "public_network"
+        end
+
+        box.vm.provision "shell", inline: <<-SHELL
+          mkdir -p ~root/.ssh
+                cp ~vagrant/.ssh/auth* ~root/.ssh
+        SHELL
+        case boxname.to_s
+
+          when "ovpn"
+            box.vm.provision "shell", run: "always", inline: <<-SHELL
+              #setenforce 0
+
+              echo net.ipv4.conf.all.forwarding=1  >> /etc/sysctl.conf
+              echo net.ipv4.ip_forward=1 >> /etc/sysctl.conf
+
+              yum install -y epel-release && yum install -y openvpn easy-rsa
+
+              cd /home/vagrant
+              /usr/share/easy-rsa/3/easyrsa init-pki
+              /usr/sbin/openvpn --genkey --secret /home/vagrant/pki/ta.key
+              yes ovpn | /usr/share/easy-rsa/3/easyrsa build-ca nopass
+              yes ovpn | /usr/share/easy-rsa/3/easyrsa gen-req server nopass
+              yes client | /usr/share/easy-rsa/3/easyrsa gen-req client nopass
+              yes yes | /usr/share/easy-rsa/3/easyrsa sign-req server server
+              yes yes | /usr/share/easy-rsa/3/easyrsa sign-req client client
+              cd /home/vagrant/pki
+              cp -ar ca.crt private/ca.key private/server.key private/client.key issued/server.crt issued/client.crt ta.key /etc/openvpn 
+              mkdir /home/vagrant/output
+              cp ca.crt private/client.key issued/client.crt /home/vagrant/output
+
+              cat <<EOT >> /etc/openvpn/dh.pem
+-----BEGIN DH PARAMETERS-----
+MIIBCAKCAQEA729w2XFqrzgBsulp3W733aGgW7DoK20Jn1aTjPrpq40HNsJWpjHy
+hUWNKjKjsAzNy3s8u8I/EN/tJlDzLl8yh0CZLBBYTcO+2IGZUkUsK98TS0s18K9L
+PMwQz5gmEhmnJDxgGkOnUkAZE9gPSxAFge3M3R8SiXUyPFOj099ViLG6pno2g/X0
+rYbYrkc980RXX0jfDCDgwDpaOtyl+LUwPN6liiEfEYgVf1iQWCENa36aFLmSXEVJ
+Q0EZYA/wHtuHdH9tWkkktPzTjS/ml0IbeZhQYUjV0fQ4xS6DMXt6RgyBRomhpPpd
+arpr4yUhX2bwZCFzy99T1IikTxSd6ByRywIBAg==
+-----END DH PARAMETERS-----
+EOT
+
+              cat <<EOT >> /etc/openvpn/server.conf
+port 1194
+proto udp
+dev tun
+ca /etc/openvpn/ca.crt
+cert /etc/openvpn/server.crt
+key /etc/openvpn/server.key
+dh /etc/openvpn/dh.pem
+server 10.0.5.0 255.255.255.0
+ifconfig-pool-persist ipp.txt
+client-to-client
+client-config-dir /etc/openvpn/ccd
+route 192.168.20.0 255.255.255.0
+push "route 192.168.20.0 255.255.255.0"
+keepalive 10 120
+persist-key
+persist-tun
+comp-lzo
+status /var/log/openvpn-status.log
+log /var/log/openvpn.log
+verb 3
+EOT
+
+              cat <<EOT >> /etc/openvpn/client.conf
+dev tun
+proto udp
+client
+resolv-retry infinite
+ca ca.crt
+cert client.crt
+key client.key
+route 192.168.10.0 255.255.255.0
+persist-key
+persist-tun
+comp-lzo
+verb 3
+EOT
+
+mkdir /etc/openvpn/ccd && mkdir /var/log/openvpn
+echo "iroute 192.168.20.0 255.255.255.0" > /etc/openvpn/ccd/client
+ip4=$(ip -o -4 addr list eth1 | awk '{print $4}' | cut -d/ -f1)
+echo "remote $ip4 1194" >> /etc/openvpn/client.conf
+cp /etc/openvpn/client.conf /home/vagrant/output
+chown -R vagrant /home/vagrant/output
+
+restorecon -R -v /etc/openvpn
+
+systemctl restart network
+systemctl start openvpn@server
+systemctl enable openvpn@server
+sleep 10
+systemctl status openvpn@server
+              SHELL
+        end
+      end
+
+  end
+  
+  
+end
+
