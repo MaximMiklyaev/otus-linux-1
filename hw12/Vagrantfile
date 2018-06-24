@@ -1,0 +1,170 @@
+# -*- mode: ruby -*-
+# vim: set ft=ruby :
+
+MACHINES = {
+
+  :vm1 => {
+    :box_name => "centos/7",
+    :net => [
+              {adapter: 2, auto_config: false, virtualbox__intnet: "VLAN10"},
+              {adapter: 3, auto_config: false, virtualbox__intnet: "VLAN20"},
+              {adapter: 4, ip: '10.0.10.1', netmask: "255.255.255.0", virtualbox__intnet: "vm1_area_1"}
+            ]
+  }, 
+
+  :vm2 => {
+    :box_name => "centos/7",
+    :net => [
+              {adapter: 2, auto_config: false, virtualbox__intnet: "VLAN10"},
+              {adapter: 3, auto_config: false, virtualbox__intnet: "VLAN30"},
+              {adapter: 4, ip: '10.0.20.1', netmask: "255.255.255.0", virtualbox__intnet: "vm2_area_2"}
+            ]
+  }, 
+
+  :vm3 => {
+    :box_name => "centos/7",
+    :net => [
+              {adapter: 2, auto_config: false, virtualbox__intnet: "VLAN20"},
+              {adapter: 3, auto_config: false, virtualbox__intnet: "VLAN30"},
+              {adapter: 4, ip: '10.0.30.1', netmask: "255.255.255.0", virtualbox__intnet: "vm3_area_3"}
+            ]
+  }, 
+
+}
+
+Vagrant.configure("2") do |config|
+
+  MACHINES.each do |boxname, boxconfig|
+      
+    config.vm.define boxname do |box|
+
+        box.vm.box = boxconfig[:box_name]
+        box.vm.host_name = boxname.to_s
+
+        config.vm.provider "virtualbox" do |v|
+          v.memory = 256
+        end
+
+        boxconfig[:net].each do |ipconf|
+          box.vm.network "private_network", ipconf
+        end
+        
+        if boxconfig.key?(:public)
+          box.vm.network "public_network", boxconfig[:public]
+        end
+
+        box.vm.provision "shell", inline: <<-SHELL
+          mkdir -p ~root/.ssh
+                cp ~vagrant/.ssh/auth* ~root/.ssh
+        SHELL
+        
+        case boxname.to_s
+
+          when "vm1"
+            box.vm.provision "shell", run: "always", inline: <<-SHELL
+              #setenforce 0
+              yum install -y quagga
+              cat <<EOT >> /etc/sysctl.conf
+net.ipv4.conf.all.forwarding=1
+net.ipv4.ip_forward=1
+net.ipv4.conf.all.rp_filter=0
+EOT
+              cat <<EOT >> /etc/sysconfig/network-scripts/ifcfg-vlan10
+VLAN=yes
+DEVICE=vlan10
+PHYSDEV=eth1
+VLAN_ID=10
+BOOTPROTO=static
+ONBOOT=yes
+TYPE=vlan
+IPADDR=10.10.1.1
+NETMASK=255.255.255.252
+EOT
+              cat <<EOT >> /etc/sysconfig/network-scripts/ifcfg-vlan20
+VLAN=yes
+DEVICE=vlan20
+PHYSDEV=eth2
+VLAN_ID=10
+BOOTPROTO=static
+ONBOOT=yes
+TYPE=vlan
+IPADDR=10.20.1.1
+NETMASK=255.255.255.252
+EOT
+              systemctl restart network
+              SHELL
+          when "vm2"
+            box.vm.provision "shell", run: "always", inline: <<-SHELL
+              #setenforce 0
+              yum install -y quagga
+              cat <<EOT >> /etc/sysctl.conf
+net.ipv4.conf.all.forwarding=1
+net.ipv4.ip_forward=1
+net.ipv4.conf.all.rp_filter=0
+EOT
+              cat <<EOT >> /etc/sysconfig/network-scripts/ifcfg-vlan10
+VLAN=yes
+DEVICE=vlan10
+PHYSDEV=eth1
+VLAN_ID=10
+BOOTPROTO=static
+ONBOOT=yes
+TYPE=vlan
+IPADDR=10.10.1.2
+NETMASK=255.255.255.252
+EOT
+              cat <<EOT >> /etc/sysconfig/network-scripts/ifcfg-vlan30
+VLAN=yes
+DEVICE=vlan30
+PHYSDEV=eth2
+VLAN_ID=30
+BOOTPROTO=static
+ONBOOT=yes
+TYPE=vlan
+IPADDR=10.30.1.1
+NETMASK=255.255.255.252
+EOT
+              systemctl restart network
+              SHELL
+          when "vm3"
+            box.vm.provision "shell", run: "always", inline: <<-SHELL
+              #setenforce 0
+              yum install -y quagga
+              cat <<EOT >> /etc/sysctl.conf
+net.ipv4.conf.all.forwarding=1
+net.ipv4.ip_forward=1
+net.ipv4.conf.all.rp_filter=0
+EOT
+              cat <<EOT >> /etc/sysconfig/network-scripts/ifcfg-vlan20
+VLAN=yes
+DEVICE=vlan20
+PHYSDEV=eth1
+VLAN_ID=20
+BOOTPROTO=static
+ONBOOT=yes
+TYPE=vlan
+IPADDR=10.20.1.2
+NETMASK=255.255.255.252
+EOT
+              cat <<EOT >> /etc/sysconfig/network-scripts/ifcfg-vlan30
+VLAN=yes
+DEVICE=vlan30
+PHYSDEV=eth2
+VLAN_ID=30
+BOOTPROTO=static
+ONBOOT=yes
+TYPE=vlan
+IPADDR=10.30.1.2
+NETMASK=255.255.255.252
+EOT
+              systemctl restart network
+              SHELL
+
+        end
+
+      end
+
+  end
+  
+  
+end
