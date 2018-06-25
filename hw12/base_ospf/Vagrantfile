@@ -91,7 +91,33 @@ TYPE=vlan
 IPADDR=10.20.1.1
 NETMASK=255.255.255.252
 EOT
+              cat <<EOT >> /etc/quagga/daemons
+zebra=yes
+ospfd=yes
+EOT
+              cat <<EOT >> /etc/quagga/zebra.conf
+hostname vm1
+log file /var/log/quagga/zebra.log 
+interface eth3
+ip address 10.0.10.1/24
+interface vlan10
+ip address 10.10.1.1/30
+interface vlan20
+ip address 10.20.1.1/30
+EOT
+              cat <<EOT >> /etc/quagga/ospfd.conf
+hostname vm1
+router ospf
+    ospf router-id 10.10.1.1
+    network 10.10.1.0/30 area 0
+    network 10.20.1.0/30 area 0
+    network 10.0.10.0/24 area 1
+    redistribute connected
+log file /var/log/quagga/ospfd.log
+EOT
               systemctl restart network
+              systemctl start zebra
+              systemctl start ospfd
               SHELL
           when "vm2"
             box.vm.provision "shell", run: "always", inline: <<-SHELL
@@ -124,7 +150,33 @@ TYPE=vlan
 IPADDR=10.30.1.1
 NETMASK=255.255.255.252
 EOT
+              cat <<EOT >> /etc/quagga/daemons
+zebra=yes
+ospfd=yes
+EOT
+              cat <<EOT >> /etc/quagga/zebra.conf
+hostname vm2
+log file /var/log/quagga/zebra.log 
+interface eth3
+ip address 10.0.20.1/24
+interface vlan10
+ip address 10.10.1.2/30
+interface vlan30
+ip address 10.30.1.1/30
+EOT
+              cat <<EOT >> /etc/quagga/ospfd.conf
+hostname vm2
+router ospf
+    ospf router-id 10.10.1.2
+    network 10.10.1.0/30 area 0
+    network 10.30.1.0/30 area 0
+    network 10.0.20.0/24 area 1
+    redistribute connected
+log file /var/log/quagga/ospfd.log
+EOT
               systemctl restart network
+              systemctl start zebra
+              systemctl start ospfd
               SHELL
           when "vm3"
             box.vm.provision "shell", run: "always", inline: <<-SHELL
@@ -157,7 +209,33 @@ TYPE=vlan
 IPADDR=10.30.1.2
 NETMASK=255.255.255.252
 EOT
+              cat <<EOT >> /etc/quagga/daemons
+zebra=yes
+ospfd=yes
+EOT
+              cat <<EOT >> /etc/quagga/zebra.conf
+hostname vm3
+log file /var/log/quagga/zebra.log 
+interface eth3
+ip address 10.0.30.1/24
+interface vlan20
+ip address 10.20.1.2/30
+interface vlan30
+ip address 10.30.1.2/30
+EOT
+              cat <<EOT >> /etc/quagga/ospfd.conf
+hostname vm3
+router ospf
+    ospf router-id 10.20.1.2
+    network 10.20.1.0/30 area 0
+    network 10.30.1.0/30 area 0
+    network 10.0.30.0/24 area 1
+    redistribute connected
+log file /var/log/quagga/ospfd.log
+EOT
               systemctl restart network
+              systemctl start zebra
+              systemctl start ospfd
               SHELL
 
         end
