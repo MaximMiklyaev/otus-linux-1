@@ -47,9 +47,10 @@
 
 [vagrant@vm2 ~]$ tracepath 10.0.30.1
  1?: [LOCALHOST]                                         pmtu 1500
- 1:  10.0.30.1                                             0.316ms reached
- 1:  10.0.30.1                                             0.312ms reached
-     Resume: pmtu 1500 hops 1 back 1 
+ 1:  10.10.1.1                                             0.455ms 
+ 1:  10.10.1.1                                             0.395ms 
+ 2:  10.0.30.1                                             0.764ms reached
+     Resume: pmtu 1500 hops 2 back 2 
 
 /etc/quagga/daemons
 zebra=yes
@@ -74,4 +75,7 @@ router ospf
     network 10.30.1.0/30 area 0
     network 10.0.20.0/24 area 1
     redistribute connected
+interface vlan30
+ip ospf cost 1000
 log file /var/log/quagga/ospfd.log
+
