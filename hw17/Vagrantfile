@@ -36,11 +36,6 @@ Vagrant.configure("2") do |config|
                 cp ~vagrant/.ssh/auth* ~root/.ssh
         SHELL
 
-        #box.vm.provision "ansible" do |ansible|
-        #  ansible.playbook = "playbook.yml"
-        #  ansible.become = "true"
-        #end
-
         case boxname.to_s
           when "pamvm"
             box.vm.provision "shell", inline: <<-SHELL
