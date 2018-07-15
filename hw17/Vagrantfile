@@ -1,0 +1,79 @@
+# -*- mode: ruby -*-
+# vim: set ft=ruby :
+
+MACHINES = {
+ :pamvm => {
+        :box_name => "centos/7",
+        :net => [
+                   {ip: '192.168.255.1', adapter: 2, netmask: "255.255.255.240", virtualbox__intnet: "pam-net"}
+               ]
+  }
+}
+
+Vagrant.configure("2") do |config|
+
+  MACHINES.each do |boxname, boxconfig|
+      
+    config.vm.define boxname do |box|
+
+        box.vm.box = boxconfig[:box_name]
+        box.vm.host_name = boxname.to_s
+
+        config.vm.provider "virtualbox" do |v|
+          v.memory = 256
+        end
+
+        boxconfig[:net].each do |ipconf|
+          box.vm.network "private_network", ipconf
+        end
+        
+        if boxconfig.key?(:public)
+          box.vm.network "public_network", boxconfig[:public]
+        end
+
+        box.vm.provision "shell", inline: <<-SHELL
+          mkdir -p ~root/.ssh
+                cp ~vagrant/.ssh/auth* ~root/.ssh
+        SHELL
+
+        case boxname.to_s
+          when "pamvm"
+            box.vm.provision "shell", inline: <<-SHELL
+              yum install -y epel-release 
+              yum install -y pam_script
+              groupadd admin
+              useradd pamuser
+              useradd justuser
+              useradd adminuser
+              usermod -a -G admin pamuser
+              echo "pamuser:pamuser" | chpasswd
+              echo "justuser:justuser" | chpasswd
+              echo "adminuser:adminuser" | chpasswd
+              sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config
+              echo "auth       required     pam_script.so" >> /etc/pam.d/sshd
+              echo "cap_sys_admin adminuser" > /etc/security/capability.conf
+              echo "auth            optional        pam_cap.so" >> /etc/pam.d/su
+              cat <<'EOT' > /etc/pam_script
+#!/bin/bash
+hdays = ['31.12','08.03','23.03']
+if [[ `grep $PAM_USER /etc/group | grep 'admin'` ]]
+then exit 0
+fi
+if [[ `date +%u` > 5 ]]
+then exit 1
+elif [[ " ${hdays[*]} " == *" date +%d.%m "* ]]
+then exit 1
+else exit 0
+fi
+EOT
+              chmod +x /etc/pam_script
+              systemctl restart sshd
+            SHELL
+        end
+
+      end
+
+  end
+  
+end
+
